@@ -5,7 +5,7 @@ enum Tile {
     Empty, // Ajout indispensable pour les cases "vides"
     WWall1, WWall2, NWall1, NWall2, SeAngle, SWall, SwAngle, EWall1, EWall2, S5, S4, Void,
     Floor1, Floor2, Floor3, Floor4, Floor5, Floor6, Floor7, Floor8,
-    Spider1, Door, Spider2, LatDoor,
+    Spider1, Door, Spider2, LatDoor1, LatDoor2,
     NTorch, Skeleton, Chest, // Nouvelles tuiles ajoutées pour correspondre à vos grilles
 }
 
@@ -35,7 +35,8 @@ impl Tile {
             Tile::Spider1 => (4.0, 6.0),
             Tile::Spider2 => (5.0, 6.0),
             Tile::Door    => (7.0, 3.0),
-            Tile::LatDoor => (7.0, 4.0),
+            Tile::LatDoor1 => (7.0, 5.0),
+            Tile::LatDoor2 => (7.0, 4.0),
             Tile::NTorch   => (0.0, 9.0),
             Tile::Skeleton => (7.0, 7.0),
             Tile::Chest    => (0.0, 8.0),
@@ -105,7 +106,8 @@ fn fill_walls(walls_layer: &mut Vec<Vec<Tile>>, decor_layer: &mut Vec<Vec<Tile>>
                     "T"     => Tile::NTorch,
                     "Sp2"   => Tile::Spider2,
                     "Sk"    => Tile::Skeleton,
-                    "DL"    => Tile::LatDoor,
+                    "DL1"    => Tile::LatDoor1,
+                    "DL2"    => Tile::LatDoor2,
                     "Chest" => Tile::Chest,
                     "Sp1"   => Tile::Spider1,
                     _       => Tile::Empty,
@@ -159,24 +161,24 @@ async fn main() {
     let mut decor_layer = vec![];
 
     let map_walls = vec![
-        "W     N1    N1,T D   N1,T N2   N2   E    .    .    .    W    N1   N1   N1   N1   N1   E",  
-        "W     F7    F8   F7  F3   F6   F4   E    .    .    .    W    F1   F5   F4   F8   F6   E",  
-        "W     F3    F6   F6  F2   F6   F2   E    .    .    .    W    F4   F1   F3   F1   F2   E",  
-        "W     F4    F6   F7  F6   F1   F1   N1   N1   N1   N1   N1   F3   F2   F1   F3   F2   E"  ,
-        "W     F3    F2   F7  F4   F4   F6   F1   F2   F4   F2   F1   F3   F2   F1   F1   F5   E",  
-        "W     F5    F7   F5  F3   F3   F5   S5   S    S    S    S4   F5   F7   F5   F3   F3   E    W    N1   N1   N1   N1   E",
-        "W     F3    F2   F1  F1   F5   F3   E    .    .    .    W    F3   F4   F2   F4   F1   E    W    F1   F1   F1   F1,Chest   E",
-        "W     F4    F2   F8  F5   F3   F8   E    .    .    .    W    F7   F4   F1   F2   F8   N1   N1   D    S5   S    S    SE ",
-        "SW    S     S4   F1  S5   S    S    SE   .    .    .    W    F8   F3   F2   F6   F7   F3   F1   F4   E",
-        "W     N1    N1   F6  N1   N2   N2   E    .    .    .    W    F2   F5   F3   F8   F1   F7   F4   F2   E",
-        "W     F3    F1   F4  F7   F5   F2   E    .    .    .    W    F6   F2   F7   F4   F3   F8   F1   F5   E",
-        "W     F8    F4   F2  F1   F6   F7   E    .    .    .    W    F3   F8   F5   F2   F6   F4   F7   F1   E",
-        "W     F5    F7   F1  F3   F2   F8   N1   N1   N1   N1   N1   F4   F6   F1   F3   F7   F2   F8   F5   E",
-        "W     F2    F3   F6  F8   F1   F4   F7   F5   F2   F8   F3   F1   F6   F4   F2   F7   F5   F3   F8   E",
-        "W     F1    F5   F3  F7   F4   F2   S5   S    S    S    S4   F6   F8   F3   F1   F5   F2   F4   F7   E",
-        "W     F7    F4,Chest   F6  F2   F8   F3   E    .    .    .    W    F1   F5   F4   F7   F3   F8   F2   F6   E",
-        "W     F3    F8   F1  F5   F7   F4   E    .    .    .    W    F2   F6   F3   F1   F8   F4   F5   F7   E",
-        "SW    S     S    S   S    S    S    SE   .    .    .    SW   S    S    S    S    S    S    S    S    SE",
+        "W     N1    N1,T       D   N1,T N2   N2   E        .    .    .    W    N1   N1   N1     N1      N1   E",  
+        "W     F7    F8         F7  F3   F6   F4   E        .    .    .    W    F1   F5   F4     F8      F6   E",  
+        "W     F3    F6         F6  F2   F6   F2   E        .    .    .    W    F4   F1   F3     F1      F2   E",  
+        "W     F4    F6         F7  F6   F1   F1   N1,DL2   N1   N1   N1   N1   F3   F2   F1     F3      F2   E"  ,
+        "W     F3    F2         F7  F4   F4   F6   F1,DL1   F2   F4   F2   F1   F3   F2   F1     F1      F5   E",  
+        "W     F5    F7         F5  F3   F3   F5   S5       S    S    S    S4   F5   F7   F5     F3      F3   E    W    N1   N1   N1   N1         E",
+        "W     F3    F2         F1  F1   F5   F3   E        .    .    .    W    F3   F4   F2     F4,Sk   F1   E    W    F1   F1   F1   F1,Chest   E",
+        "W     F4    F2         F8  F5   F3   F8   E        .    .    .    W    F7   F4   F1     F2      F8   N1   N1   D    S5   S    S          SE ",
+        "SW    S     S4         F1  S5   S    S    SE       .    .    .    W    F8   F3   F2     F6      F7   F3   F1   F4   E",
+        "W     N1    N1         F6  N1   N2   N2   E        .    .    .    W    F2   F5   F3     F8      F1   F7   F4   F2   E",
+        "W     F3    F1         F4  F7   F5   F2   E        .    .    .    W    F6   F2   F7     F4      F3   F8   F1   F5   E",
+        "W     F8    F4         F2  F1   F6   F7   E        .    .    .    W    F3   F8   F5,Sk  F2      F6   F4   F7   F1   E",
+        "W     F5    F7         F1  F3   F2   F8   N1       N1   N1   N1   N1   F4   F6   F1     F3      F7   F2   F8   F5   E",
+        "W     F2    F3         F6  F8   F1   F4   F7       F5   F2   F8   F3   F1   F6   F4     F2      F7   F5   F3   F8   E",
+        "W     F1    F5         F3  F7   F4   F2   S5       S    S    S    S4   F6   F8   F3     F1      F5   F2   F4   F7   E",
+        "W     F7    F4,Chest   F6  F2   F8   F3   E        .    .    .    W    F1   F5   F4     F7      F3   F8   F2   F6   E",
+        "W     F3    F8         F1  F5   F7   F4   E        .    .    .    W    F2   F6   F3     F1      F8   F4   F5   F7   E",
+        "SW    S     S          S   S    S    S    SE       .    .    .    SW   S    S    S      S       S    S    S    S    SE",
     ];
 
     fill_walls(&mut walls_layer, &mut decor_layer, &map_walls);
