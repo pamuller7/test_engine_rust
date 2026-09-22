@@ -5,7 +5,7 @@ enum Tile {
     Empty, // Ajout indispensable pour les cases "vides"
     WWall1, WWall2, NWall1, NWall2, SeAngle, SWall, SwAngle, EWall1, EWall2, S5, S4, Void,
     Floor1, Floor2, Floor3, Floor4, Floor5, Floor6, Floor7, Floor8,
-    Spider1, Door, Spider2,
+    Spider1, Door, Spider2, LatDoor,
     NTorch, Skeleton, Chest, // Nouvelles tuiles ajoutées pour correspondre à vos grilles
 }
 
@@ -35,7 +35,8 @@ impl Tile {
             Tile::Spider1 => (4.0, 6.0),
             Tile::Spider2 => (5.0, 6.0),
             Tile::Door    => (7.0, 3.0),
-            Tile::NTorch    => (0.0, 9.0),
+            Tile::LatDoor => (7.0, 4.0),
+            Tile::NTorch   => (0.0, 9.0),
             Tile::Skeleton => (7.0, 7.0),
             Tile::Chest    => (0.0, 8.0),
             Tile::Void     => (8.0, 7.0),
@@ -65,74 +66,77 @@ fn draw_layer(layer: &Vec<Vec<Tile>>, texture: &Texture2D, tw: f32, th: f32, zoo
     }
 }
 
-fn fill_walls(walls_layer: &mut Vec<Vec<Tile>>, map_walls: &Vec<&str>) {
+fn fill_walls(walls_layer: &mut Vec<Vec<Tile>>, decor_layer: &mut Vec<Vec<Tile>>, map_walls: &Vec<&str>) {
     let mut line = 0;
     let max_cols = 1980 / 16;
     let max_rows = 1200 / 16;
     for row_str in map_walls {
         let mut col = 0;
+        let mut walls_row = vec![];
         let mut decor_row = vec![];
         for token in row_str.split_whitespace() {
-            let tile = match token {
-                "W"   => Tile::WWall1,
-                "N1"  => Tile::NWall1,
-                "N2"  => Tile::NWall2,
-                "D"   => Tile::Door,
-                "E"   => Tile::EWall1,
-                "SW"  => Tile::SwAngle,
-                "SE"  => Tile::SeAngle,
-                "S"   => Tile::SWall,
-                "F1"  => Tile::Floor1,
-                "F2"  => Tile::Floor2,
-                "F3"  => Tile::Floor3,
-                "F4"  => Tile::Floor4,
-                "F5"  => Tile::Floor5,
-                "F6"  => Tile::Floor6,
-                "F7"  => Tile::Floor7,
-                "F8"  => Tile::Floor8,
-                "S5"  => Tile::S5,
-                "S4"  => Tile::S4,
-                "."   => Tile::Void,
-                _     => Tile::Void,
-            };
-            decor_row.push(tile);
+            let mut final_wall = Tile::Void;
+            let mut final_deco = Tile::Empty;
+
+            for index in token.split(',') {
+                let tile_wall = match index {
+                    "W"   => Tile::WWall1,
+                    "N1"  => Tile::NWall1,
+                    "N2"  => Tile::NWall2,
+                    "D"   => Tile::Door,
+                    "E"   => Tile::EWall1,
+                    "SW"  => Tile::SwAngle,
+                    "SE"  => Tile::SeAngle,
+                    "S"   => Tile::SWall,
+                    "F1"  => Tile::Floor1,
+                    "F2"  => Tile::Floor2,
+                    "F3"  => Tile::Floor3,
+                    "F4"  => Tile::Floor4,
+                    "F5"  => Tile::Floor5,
+                    "F6"  => Tile::Floor6,
+                    "F7"  => Tile::Floor7,
+                    "F8"  => Tile::Floor8,
+                    "S5"  => Tile::S5,
+                    "S4"  => Tile::S4,
+                    "."   => Tile::Void,
+                    _     => Tile::Void,
+                };
+                let tile_deco = match index {
+                    "T"     => Tile::NTorch,
+                    "Sp2"   => Tile::Spider2,
+                    "Sk"    => Tile::Skeleton,
+                    "DL"    => Tile::LatDoor,
+                    "Chest" => Tile::Chest,
+                    "Sp1"   => Tile::Spider1,
+                    _       => Tile::Empty,
+                };
+                if tile_wall != Tile::Void {
+                    final_wall = tile_wall;
+                }
+                if tile_deco != Tile::Empty {
+                    final_deco = tile_deco;
+                }
+            }
+            walls_row.push(final_wall);
+            decor_row.push(final_deco);
             col += 1;
         }
         while col < max_cols { 
-            decor_row.push(Tile::Void);
+            walls_row.push(Tile::Void);
+            decor_row.push(Tile::Empty);
             col += 1; 
         }
-        walls_layer.push(decor_row);
+        
+        walls_layer.push(walls_row);
+        decor_layer.push(decor_row);
         line += 1; 
     }
-
     while line < max_rows {
-        let empty_row = vec![Tile::Void; max_cols];
-        walls_layer.push(empty_row);
+        walls_layer.push(vec![Tile::Void; max_cols]);
+        decor_layer.push(vec![Tile::Empty; max_cols]);
         line += 1;
     }
 }
-
-
-fn fill_decor(decor_layer: &mut Vec<Vec<Tile>>, map_decor: &Vec<&str>) {
-
-    for row_str in map_decor {
-        let mut decor_row = vec![];
-        for token in row_str.split_whitespace() {
-            let tile = match token {
-                "T"     => Tile::NTorch,
-                "Sp2"   => Tile::Spider2,
-                "Sk"    => Tile::Skeleton,
-                "Chest" => Tile::Chest,
-                "Sp1"   => Tile::Spider1,
-                _       => Tile::Empty,
-            };
-            decor_row.push(tile);
-        }
-        decor_layer.push(decor_row);
-    }
-}
-
 
 fn window_conf() -> Conf {
     Conf {
@@ -155,40 +159,27 @@ async fn main() {
     let mut decor_layer = vec![];
 
     let map_walls = vec![
-        "W  N1 N1 D  N1 N2 N2 E  .  .  .  W  N1 N1 N1 N1 N1 E",
-        "W  F7 F8 F7 F3 F6 F4 E  .  .  .  W  F1 F5 F4 F8 F6 E",
-        "W  F3 F6 F6 F2 F6 F2 E  .  .  .  W  F4 F1 F3 F1 F2 N1 N1 N1 E",
-        "W  F4 F6 F7 F6 F1 F1 N1 N1 N1 N1 D  F3 F2 F1 F3 F2 F1 F1 F5 E",
-        "W  F3 F2 F7 F4 F4 F6 F1 F2 F4 F2 F4 F3 F2 F1 F1 F5 F3 F6 F1 E",
-        "W  F5 F7 F5 F3 F3 F5 S5 S  S  S  S4 F5 F7 F5 F3 F3 F5 F1 F5 E",
-        "W  F3 F2 F1 F1 F5 F3 E  .  .  .  W  F3 F4 F2 F4 F1 F8 F4 F5 E",
-        "W  F4 F2 F8 F5 F3 F8 E  .  .  .  W  F7 F4 F1 F2 F8 F3 F6 F5 E",
-        "SW S  S4 F1 S5 S  S  SE .  .  .  W  F8 F3 F2 F6 F7 F3 F1 F4 E",
-        "W  N1 N1 F6 N1 N2 N2 E  .  .  .  W  F2 F5 F3 F8 F1 F7 F4 F2 E",
-        "W  F3 F1 F4 F7 F5 F2 E  .  .  .  W  F6 F2 F7 F4 F3 F8 F1 F5 E",
-        "W  F8 F4 F2 F1 F6 F7 E  .  .  .  W  F3 F8 F5 F2 F6 F4 F7 F1 E",
-        "W  F5 F7 F1 F3 F2 F8 N1 N1 N1 N1 N1 F4 F6 F1 F3 F7 F2 F8 F5 E",
-        "W  F2 F3 F6 F8 F1 F4 F7 F5 F2 F8 F3 F1 F6 F4 F2 F7 F5 F3 F8 E",
-        "W  F1 F5 F3 F7 F4 F2 S5 S  S  S  S4 F6 F8 F3 F1 F5 F2 F4 F7 E",
-        "W  F7 F4 F6 F2 F8 F3 E  .  .  .  W  F1 F5 F4 F7 F3 F8 F2 F6 E",
-        "W  F3 F8 F1 F5 F7 F4 E  .  .  .  W  F2 F6 F3 F1 F8 F4 F5 F7 E",
-        "SW S  S  S  S  S  S  SE .  .  .  SW S  S  S  S  S  S  S  S  SE",
+        "W     N1    N1,T D   N1,T N2   N2   E    .    .    .    W    N1   N1   N1   N1   N1   E",  
+        "W     F7    F8   F7  F3   F6   F4   E    .    .    .    W    F1   F5   F4   F8   F6   E",  
+        "W     F3    F6   F6  F2   F6   F2   E    .    .    .    W    F4   F1   F3   F1   F2   E",  
+        "W     F4    F6   F7  F6   F1   F1   N1   N1   N1   N1   N1   F3   F2   F1   F3   F2   E"  ,
+        "W     F3    F2   F7  F4   F4   F6   F1   F2   F4   F2   F1   F3   F2   F1   F1   F5   E",  
+        "W     F5    F7   F5  F3   F3   F5   S5   S    S    S    S4   F5   F7   F5   F3   F3   E    W    N1   N1   N1   N1   E",
+        "W     F3    F2   F1  F1   F5   F3   E    .    .    .    W    F3   F4   F2   F4   F1   E    W    F1   F1   F1   F1,Chest   E",
+        "W     F4    F2   F8  F5   F3   F8   E    .    .    .    W    F7   F4   F1   F2   F8   N1   N1   D    S5   S    S    SE ",
+        "SW    S     S4   F1  S5   S    S    SE   .    .    .    W    F8   F3   F2   F6   F7   F3   F1   F4   E",
+        "W     N1    N1   F6  N1   N2   N2   E    .    .    .    W    F2   F5   F3   F8   F1   F7   F4   F2   E",
+        "W     F3    F1   F4  F7   F5   F2   E    .    .    .    W    F6   F2   F7   F4   F3   F8   F1   F5   E",
+        "W     F8    F4   F2  F1   F6   F7   E    .    .    .    W    F3   F8   F5   F2   F6   F4   F7   F1   E",
+        "W     F5    F7   F1  F3   F2   F8   N1   N1   N1   N1   N1   F4   F6   F1   F3   F7   F2   F8   F5   E",
+        "W     F2    F3   F6  F8   F1   F4   F7   F5   F2   F8   F3   F1   F6   F4   F2   F7   F5   F3   F8   E",
+        "W     F1    F5   F3  F7   F4   F2   S5   S    S    S    S4   F6   F8   F3   F1   F5   F2   F4   F7   E",
+        "W     F7    F4,Chest   F6  F2   F8   F3   E    .    .    .    W    F1   F5   F4   F7   F3   F8   F2   F6   E",
+        "W     F3    F8   F1  F5   F7   F4   E    .    .    .    W    F2   F6   F3   F1   F8   F4   F5   F7   E",
+        "SW    S     S    S   S    S    S    SE   .    .    .    SW   S    S    S    S    S    S    S    S    SE",
     ];
 
-    let map_decor = vec![
-        ". . T . T . . . . . . . . . . . . . . . . . . . .",
-        ". . . . . . Sp2 . . . . . . . . . . . . . . . . .",
-        ". . . . . . . . . . . . . . . . . . . . . . . . .",
-        ". . . . . . . . . . . . . . . . . . . . . . . . .",
-        ". . . . . . . . . . . . . . . . . . . . . . . . .",
-        ". . . . . . Sk . . . . . . . . . . . . . . . . . .",
-        ". . . . . . . . . . . . . . . . . . . . . . . . .",
-        ". Chest Sp1 . . . . . . . . . . . . . . . . . . . .",
-        ". . . . . . . . . . . . . . . . . . . . . . . . .",
-    ];
-    fill_walls(&mut walls_layer, &map_walls);
-    fill_decor(&mut decor_layer, &map_decor);
-
+    fill_walls(&mut walls_layer, &mut decor_layer, &map_walls);
     let zoom = 4.0;
     loop {
         clear_background(BLACK);
