@@ -9,7 +9,7 @@ enum Tile {
     Empty,
     WWall1, WWall2, NWall1, NWall2, SeAngle, SWall, SwAngle, EWall1, EWall2, S5, S4, Void,
     Floor1, Floor2, Floor3, Floor4, Floor5, Floor6, Floor7, Floor8,
-    Spider1, Door, Spider2, LatDoor1, LatDoor2,
+    Spider1, Door, Spider2, LatDoor1, LatDoor2, DoorOpen1, DoorOpen2,
     NTorch, Skeleton, Chest, Pot
 }
 
@@ -50,7 +50,9 @@ impl Tile {
             //decorations
             Tile::Spider1 => (4.0, 6.0, 1.0, 0.0),
             Tile::Spider2 => (5.0, 6.0, 1.0, 0.0),
-            Tile::Door    => (7.0, 3.0, 0.0, 1.0),
+            Tile::Door      => (7.0, 3.0, 0.0, 1.0),
+            Tile::DoorOpen1 => (7.0, 5.0, 1.0, 2.0),
+            Tile::DoorOpen2 => (7.0, 5.0, 1.0, 2.0),
             Tile::LatDoor1 => (7.0, 5.0, 0.0, 2.0),
             Tile::LatDoor2 => (7.0, 4.0, 0.0, 2.0),
             Tile::NTorch   => (0.0, 9.0, 1.0, 0.0),
@@ -63,7 +65,7 @@ impl Tile {
 
 
 
-fn draw_asset(tw: f32, th: f32, zoom: f32, asset: &Texture2D, pos_map: (f32, f32), pos_asset: (f32, f32), flip: bool){
+fn draw_asset(tw: f32, th: f32, zoom: f32, asset: &Texture2D, pos_map: (f32, f32), pos_asset: (f32, f32), flip: bool, rotation: f32){
     let (row, col) = pos_map;
     let (x, y) = pos_asset;
     draw_texture_ex(
@@ -74,6 +76,7 @@ fn draw_asset(tw: f32, th: f32, zoom: f32, asset: &Texture2D, pos_map: (f32, f32
         DrawTextureParams {
             source: Some(Rect::new(x * tw, y * th, tw, th)),
             flip_x: flip,
+            rotation,
             dest_size: Some(Vec2::new(tw * zoom, th * zoom)),
             ..Default::default()
         }
@@ -85,29 +88,37 @@ fn draw_layer(layer: &Vec<Vec<Vec<Tile>>>, texture: &Texture2D, tw: f32, th: f32
     let (px, py) = player.get_coord();
     let player_row = py.round() as usize;
     let mut not_printed = vec![];
+    let mut rotation = 0.0;
+    let mut flip = false;
     for (row, line) in layer.iter().enumerate() {
         for (col, cell) in line.iter().enumerate() {
             for tile in cell {
+                rotation = 0.0;
+                flip = false;
                 if *tile == Tile::Empty {
                     continue;
                 }
+                if *tile == Tile::DoorOpen2{
+                    rotation = std::f32::consts::FRAC_PI_2;
+                    flip = true;
+                }
                 let (x, y, _z, order) = tile.coord();
                 if order == 0.0{
-                    draw_asset(tw, th, zoom, texture, (row as f32, col as f32), (x, y), false);
+                    draw_asset(tw, th, zoom, texture, (row as f32, col as f32), (x, y), flip, rotation);
                 }
                 else {
                     if row >= player_row || order == 2.0 {
-                        not_printed.push((row, col, x, y));
+                        not_printed.push((row, col, x, y, rotation, flip));
                         continue;
                     }
-                    draw_asset(tw, th, zoom, texture, (row as f32, col as f32), (x, y), false);
+                    draw_asset(tw, th, zoom, texture, (row as f32, col as f32), (x, y), flip, rotation);
                 }
             }
         }
     }
-    draw_asset(tw, th, zoom, joueur_asset, (py, px), (4.0, 0.0), player.get_flip());
-    for (row, col, x, y) in not_printed.iter() {
-        draw_asset(tw, th, zoom, texture, (*row as f32, *col as f32), (*x, *y), false);
+    draw_asset(tw, th, zoom, joueur_asset, (py, px), (4.0, 0.0), player.get_flip(), 0.0);
+    for (row, col, x, y, rotation, flip) in not_printed.iter() {
+        draw_asset(tw, th, zoom, texture, (*row as f32, *col as f32), (*x, *y), *flip, *rotation);
     }
 }
 
@@ -147,6 +158,8 @@ fn fill_walls(map_objects: &mut Vec<Vec<Vec<Tile>>>, map_walls: &Vec<&str>) {
                     "Sk"    => Tile::Skeleton,
                     "DL1"   => Tile::LatDoor1,
                     "DL2"   => Tile::LatDoor2,
+                    "DO1"   => Tile::DoorOpen1,
+                    "DO2"   => Tile::DoorOpen2,
                     "Chest" => Tile::Chest,
                     "Sp1"   => Tile::Spider1,
                     "Pot"   => Tile::Pot,
@@ -248,7 +261,54 @@ fn draw_inventory(player: &mut Entity, map_objects: &mut Vec<Vec<Vec<Tile>>>) {
     }
 }
 
-fn key_player(player: &mut Entity, map: &Vec<Vec<Vec<Tile>>>, print_inventory: &mut bool) {
+fn open_door(player: &mut Entity, map_objects: &mut Vec<Vec<Vec<Tile>>>) {
+    let (px, py) = player.get_coord();
+    let x = px.round() as isize;
+    let y = py.round() as isize;
+    let mut destroy = vec![];
+    for dy in -1..=1 {
+        for dx in -1..=1 {
+            let nx = x + dx;
+            let ny = y + dy;
+            if nx < 0 || ny < 0 {
+                continue;
+            }
+            let nx = nx as usize;
+            let ny = ny as usize;
+            if ny >= map_objects.len() || nx >= map_objects[ny].len() {
+                continue;
+            }
+            for (index, tile) in map_objects[ny][nx].iter_mut().enumerate() {
+                match tile {
+                    Tile::Door => {
+                        *tile = Tile::DoorOpen1;
+                    }
+                    Tile::LatDoor1 => {
+                        *tile = Tile::DoorOpen2;
+                    }
+                    Tile::DoorOpen1 => {
+                        *tile = Tile::Door;
+                    }
+                    Tile::DoorOpen2 => {
+                        *tile = Tile::LatDoor1;
+                    }
+                    Tile::Pot => {
+                        player.add_inventory(10, "Potion".to_string());
+
+                        destroy.push((ny, nx, index));
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+    for (y, x, index) in destroy.into_iter().rev() {
+        map_objects[y][x].remove(index);
+    }
+}
+
+
+fn key_player(player: &mut Entity, map: &mut Vec<Vec<Vec<Tile>>>, print_inventory: &mut bool) {
     if is_key_down(KeyCode::W) {
         if can_moove(player, map, "N"){
             player.moove("N")
@@ -272,6 +332,9 @@ fn key_player(player: &mut Entity, map: &Vec<Vec<Vec<Tile>>>, print_inventory: &
     if is_key_pressed(KeyCode::I) {
         *print_inventory = !*print_inventory
     }
+    if is_key_pressed(KeyCode::O) {
+        open_door(player, map);
+    }
 }
 
 #[macroquad::main(window_conf)]
@@ -285,14 +348,14 @@ async fn main() {
     let mut map_objects:Vec<Vec<Vec<Tile>>> = vec![];
 
     let map_walls = vec![
-        "W     N1    N1,T       D   N1,T N2       N2   E        .    .    .    W    N1   N1   N1     N1      N1   E",  
+        "W     N1    N1,T       F1,D N1,T N2       N2   E        .    .    .    W    N1   N1   N1     N1      N1   E",  
         "W     F7    F8         F7  F3   F6       F4   E        .    .    .    W    F1   F5   F4     F8      F6   E",  
         "W     F3    F6         F6  F2   F6       F2   E        .    .    .    W    F4   F1   F3     F1      F2   E",  
         "W     F4    F6         F7  F6   F1       F1   N1,DL2   N1   N1   N1   N1   F3   F2   F1     F3      F2   E"  ,
         "W     F3    F2         F7  F4   F4       F6   F1,DL1   F2   F4   F2   F1   F3   F2   F1     F1      F5   E    .    .    .    .    .          .  N1 N1 N1",  
         "W     F5    F7         F5  F3   F3       F5   S5       S    S    S    S4   F5   F7   F5     F3      F3   E    W    N1   N1   N1   N1         E  W  F1 F2",
         "W     F3    F2         F1  F1   F5       F3   E        .    .    .    W    F3   F4   F2     F4,Sk   F1   E    W    F1   F1   F1   F1,Chest   F1 F1 F2 F5",
-        "W     F4    F2         F8  F5   F3       F8   E        .    .    .    W    F7   F4   F1     F2      F8   N1   N1   D    S5   S    S          SE F1 F2 F5",
+        "W     F4    F2         F8  F5   F3       F8   E        .    .    .    W    F7   F4   F1     F2      F8   N1   F1,D   F1,D    S5   S    S          SE F1 F2 F5",
         "SW    S     S4         F1  S5   S        S    SE       .    .    .    W    F8   F3   F2     F6      F7   F3   F1   F4   E    .    .          .  S  S  S",
         "W     N1    N1         F6  N1   N2       N2   E        .    .    .    W    F2   F5   F3     F8      F1   F7   F4   F2   E",
         "W     F3    F1         F4  F7   F5       F2   E        .    .    .    W    F6   F2   F7     F4      F3   F8   F1   F5   E",
@@ -319,8 +382,7 @@ async fn main() {
     loop {
         clear_background(BLACK);
         draw_layer(&map_objects, &texture, tile_width, tile_height, zoom, &joueur, &joueur_asset);
-
-        key_player(&mut joueur, &map_objects, &mut print_inventory);
+        key_player(&mut joueur, &mut map_objects, &mut print_inventory);
         if print_inventory{
             draw_inventory(&mut joueur, &mut map_objects)
         }
