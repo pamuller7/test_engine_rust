@@ -112,7 +112,7 @@ fn draw_layer(layer: &Vec<Vec<Vec<Tile>>>, texture: &Texture2D, tw: f32, th: f32
 }
 
 
-fn fill_walls(walls_layer: &mut Vec<Vec<Vec<Tile>>>, map_walls: &Vec<&str>) {
+fn fill_walls(map_objects: &mut Vec<Vec<Vec<Tile>>>, map_walls: &Vec<&str>) {
     let mut line = 0;
     let max_cols = 1980 / 16;
     let max_rows = 1200 / 16;
@@ -164,11 +164,11 @@ fn fill_walls(walls_layer: &mut Vec<Vec<Vec<Tile>>>, map_walls: &Vec<&str>) {
             col += 1; 
         }
         
-        walls_layer.push(walls_row);
+        map_objects.push(walls_row);
         line += 1; 
     }
     while line < max_rows {
-        walls_layer.push(vec![vec![Tile::Void]; max_cols]);
+        map_objects.push(vec![vec![Tile::Void]; max_cols]);
         line += 1;
     }
 }
@@ -182,6 +182,33 @@ fn window_conf() -> Conf {
     }
 }
 
+fn draw_button(x: f32, y: f32, width: f32, height: f32, text: &str) -> bool {
+    let (mouse_x, mouse_y) = mouse_position();
+
+    let hovered =
+        mouse_x >= x &&
+        mouse_x <= x + width &&
+        mouse_y >= y &&
+        mouse_y <= y + height;
+    let color = if hovered {
+        DARKGRAY
+    } else {
+        GRAY
+    };
+
+    draw_rectangle(x, y, width, height, color);
+    let font_size = 30;
+    let dimensions = measure_text(text, None, font_size, 1.0);
+
+    draw_text(
+        text,
+        x + (width - dimensions.width) / 2.0,
+        y + (height + dimensions.height) / 2.0,
+        font_size as f32,
+        WHITE,
+    );
+    hovered && is_mouse_button_pressed(MouseButton::Left)
+}
 
 fn can_moove(player: &mut Entity, map: &Vec<Vec<Vec<Tile>>>, movement: &str) -> bool {
     let deplacement:(f32, f32) = match movement {
@@ -204,7 +231,24 @@ fn can_moove(player: &mut Entity, map: &Vec<Vec<Vec<Tile>>>, movement: &str) -> 
     return true
 }
 
-fn moove_player(player: &mut Entity, map: &Vec<Vec<Vec<Tile>>>) {
+
+fn draw_inventory(player: &mut Entity, map_objects: &mut Vec<Vec<Vec<Tile>>>) {
+    let (x, y) = player.get_coord();
+    let inventory_tab = player.get_inventory();
+    let text_x = (x + 1.0) * 16.0 * 3.0;
+    for (index, (name, qtt, cost)) in inventory_tab.iter().enumerate() {
+        let text = format!("{} x{} - {}$", name, qtt, cost);
+        let item_y = index as f32 * 30.0 + y * 16.0 * 3.0;
+        draw_text(&text, text_x, item_y, 30.0, WHITE);
+        let text_width = measure_text(&text, None, 30, 1.0).width;
+        if draw_button(text_x + text_width + 10.0, item_y - 23.0, 50.0, 30.0, "DROP") {
+            player.drop_inventory(name.to_string());
+            map_objects[y as usize][x as usize].push(Tile::Pot)
+        }
+    }
+}
+
+fn key_player(player: &mut Entity, map: &Vec<Vec<Vec<Tile>>>, print_inventory: &mut bool) {
     if is_key_down(KeyCode::W) {
         if can_moove(player, map, "N"){
             player.moove("N")
@@ -225,6 +269,9 @@ fn moove_player(player: &mut Entity, map: &Vec<Vec<Vec<Tile>>>) {
             player.moove("E")
         }
     }
+    if is_key_pressed(KeyCode::I) {
+        *print_inventory = !*print_inventory
+    }
 }
 
 #[macroquad::main(window_conf)]
@@ -235,7 +282,7 @@ async fn main() {
     let tile_width = texture.width() / 10.0;
     let tile_height = texture.height() / 10.0;
     
-    let mut walls_layer:Vec<Vec<Vec<Tile>>> = vec![];
+    let mut map_objects:Vec<Vec<Vec<Tile>>> = vec![];
 
     let map_walls = vec![
         "W     N1    N1,T       D   N1,T N2       N2   E        .    .    .    W    N1   N1   N1     N1      N1   E",  
@@ -259,15 +306,24 @@ async fn main() {
     ];
 
     let mut joueur:Entity = Entity::nouvelle("Pascal".to_string(), (1.0,4.0));
+    joueur.add_inventory(10, String::from("Epee"));
+    joueur.add_inventory(10, String::from("Epee"));
+    joueur.add_inventory(10, String::from("Epee"));
+    joueur.add_inventory(10, String::from("Potion"));
+    joueur.add_inventory(10, String::from("Truc"));
     let joueur_asset = load_texture("assets/Dungeon_Character_2.png").await.unwrap();
     joueur_asset.set_filter(FilterMode::Nearest); 
-    fill_walls(&mut walls_layer, &map_walls);
+    let mut print_inventory = false;
+    fill_walls(&mut map_objects, &map_walls);
     let zoom = 3.0;
     loop {
         clear_background(BLACK);
-        draw_layer(&walls_layer, &texture, tile_width, tile_height, zoom, &joueur, &joueur_asset);
+        draw_layer(&map_objects, &texture, tile_width, tile_height, zoom, &joueur, &joueur_asset);
 
-        moove_player(&mut joueur, &walls_layer);
+        key_player(&mut joueur, &map_objects, &mut print_inventory);
+        if print_inventory{
+            draw_inventory(&mut joueur, &mut map_objects)
+        }
         next_frame().await;
     }
 }

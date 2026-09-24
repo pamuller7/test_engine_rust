@@ -35,6 +35,24 @@ impl Inventory {
 			});
 		}
 	}
+
+	fn remove_item(&mut self, name: String) {
+		let mut removed: i32 = -1;
+		for (index, stack) in self.items.iter_mut().enumerate() {
+			if stack.item.name == name {
+				if stack.quantity > 0 {
+					stack.quantity -= 1;
+				}
+				if stack.quantity == 0 {
+					removed = index as i32;
+				}
+				break;
+			}
+		}
+		if removed != -1 {
+			self.items.remove(removed as usize);
+		}
+	}
 }
 
 pub struct Entity {
@@ -57,11 +75,19 @@ impl Entity {
     }
 
 	pub fn get_coord(&self) -> (f32, f32){
-        return self.coord
+        self.coord
     }
 
 	pub fn get_flip(&self) -> bool {
-		return self.flip
+		self.flip
+	}
+
+	pub fn add_inventory(&mut self, cost: u32, name: String) {
+		self.inventory.add_item(cost, name);
+	}
+
+	pub fn drop_inventory (&mut self, name: String) {
+		self.inventory.remove_item(name);
 	}
 
     fn se_presenter(&self) {
@@ -71,13 +97,12 @@ impl Entity {
         );
     }
 
-	fn aff_inteventory(&self) {
+	pub fn get_inventory(&self) -> Vec<(String, u32, u32)> {
+		let mut output = vec![];
 		for x in &self.inventory.items {
-			println! (
-				"item name: {} quantity: {} cost: {}",
-				x.item.name, x.quantity, x.item.cost,
-			)
+			output.push((x.item.name.clone(), x.quantity, x.item.cost));
 		}
+		output
 	}
 
 	pub fn moove(&mut self, movement: &str) {
