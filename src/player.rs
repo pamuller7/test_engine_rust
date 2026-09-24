@@ -12,6 +12,7 @@ struct Inventory {
     size: u32,
     items: Vec<ItemStack>,
 }
+
 impl Inventory {
     fn new(size: u32) -> Inventory {
         Inventory {
@@ -41,6 +42,7 @@ pub struct Entity {
     inventory: Inventory,
     location: String,
 	coord: (f32, f32),
+	flip: bool,
 }
 
 impl Entity {
@@ -50,12 +52,17 @@ impl Entity {
             inventory: Inventory::new(10),
             location: String::from("Marché"),
 			coord,
+			flip: false,
         }
     }
 
 	pub fn get_coord(&self) -> (f32, f32){
         return self.coord
     }
+
+	pub fn get_flip(&self) -> bool {
+		return self.flip
+	}
 
     fn se_presenter(&self) {
         println!(
@@ -74,15 +81,20 @@ impl Entity {
 	}
 
 	pub fn moove(&mut self, movement: &str) {
-		let deplacement:(f32, f32) = match movement {
+		let (x2, y2) = match movement {
 			"N" => (0.0, -0.1),
 			"S" => (0.0, 0.1),
-			"E" => (0.1, 0.0),
-			"W" => (-0.1, 0.0),
-			_   => (0.0, 0.0)
+			"E" => {
+				self.flip = false;
+				(0.1, 0.0)
+			}
+			"W" => {
+				self.flip = true;
+				(-0.1, 0.0)
+			}
+			_ => (0.0, 0.0),
 		};
-		let (x1, y1) = self.coord;
-		let (x2, y2) = deplacement;
-		self.coord = (x1 + x2, y1 + y2);
+		self.coord.0 += x2;
+		self.coord.1 += y2;
 	}
 }

@@ -1,0 +1,47 @@
+world:
+  locations:
+    start:
+      name: "entrance"
+      description: "A pont levis with de la pierre"
+      exits:
+          north: "room_1"
+          east: "room_2"
+
+    room_1:
+      name: "room_1"
+      description: "une sombre salle toute humide avec zombie"
+      exits:
+          south: "start"
+          items: ["ale"]
+      spawns:
+          - npc_type: "zombie"
+      count: 5
+
+    room_2:
+      name: "room_2"
+      description: "zone avec un marchant au sol"
+      exits:
+          west: "start"
+      spawns:
+          - npc_type: "merchant"
+      count: 1
+
+items:
+  ale:
+    name: "Frothy Ale"
+    description: "A refreshing drink that restores energy."
+    obtainable: true
+
+npcs:
+  zombie:
+    name: "zombie"
+    description: "A stern-looking guard watching over the square."
+    dialogue: ["REEEEAAAAR", "AAAAAAAAAAAAAAR"]
+    stats:
+        hp: 20
+  merchant:
+    name: "Shop Keeper"
+    description: "A friendly merchant eager to trade."
+    dialogue: ["Welcome to my shop!", "What can I get for you today?"]
+    stats:
+        hp: 15
