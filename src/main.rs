@@ -4,13 +4,13 @@ mod player;
 mod assets;
 
 use crate::player::Entity;
-use crate::assets::Tile;
+use crate::assets::*;
 
 
-
-fn draw_asset(tw: f32, th: f32, zoom: f32, asset: &Texture2D, pos_map: (f32, f32), pos_asset: (f32, f32), flip: bool, rotation: f32){
+fn draw_asset(tw: f32, th: f32, zoom: f32, asset: &Texture2D, pos_map: (f32, f32), pos_asset: (f32, f32), flip: (bool, bool), rotation: f32){
     let (row, col) = pos_map;
     let (x, y) = pos_asset;
+    let (flipx, flipy) = flip;
     draw_texture_ex(
         asset,
         col as f32 * tw * zoom,
@@ -18,7 +18,8 @@ fn draw_asset(tw: f32, th: f32, zoom: f32, asset: &Texture2D, pos_map: (f32, f32
         WHITE,
         DrawTextureParams {
             source: Some(Rect::new(x * tw, y * th, tw, th)),
-            flip_x: flip,
+            flip_x: flipx,
+            flip_y: flipy,
             rotation,
             dest_size: Some(Vec2::new(tw * zoom, th * zoom)),
             ..Default::default()
@@ -26,45 +27,50 @@ fn draw_asset(tw: f32, th: f32, zoom: f32, asset: &Texture2D, pos_map: (f32, f32
     );
 }
 
-fn draw_layer(layer: &Vec<Vec<Vec<Tile>>>, texture: &Texture2D, tw: f32, th: f32, zoom: f32, player: &Entity, joueur_asset: &Texture2D,
-) {
-    let (px, py) = player.get_coord();
-    let player_row = py.round() as usize;
+fn draw_layer( layer: &Vec<Vec<Vec<Tile>>>, texture: &Texture2D, tw: f32, th: f32, zoom: f32, entities:&mut Vec<(Entity, (Texture2D, (f32, f32)))>) {
     let mut not_printed = vec![];
-    let mut rotation = 0.0;
-    let mut flip = false;
+    let mut always_last = vec![];
     for (row, line) in layer.iter().enumerate() {
         for (col, cell) in line.iter().enumerate() {
             for tile in cell {
-                rotation = 0.0;
-                flip = false;
                 if *tile == Tile::Empty {
                     continue;
                 }
-                if *tile == Tile::DoorOpen2{
-                    rotation = std::f32::consts::FRAC_PI_2;
-                    flip = true;
-                }
+                let (rotation, flipx, flipy) = Tile::rotate_tile(*tile);
                 let (x, y, _z, order) = tile.coord();
-                if order == 0.0{
-                    draw_asset(tw, th, zoom, texture, (row as f32, col as f32), (x, y), flip, rotation);
-                }
-                else {
-                    if row >= player_row || order == 2.0 {
-                        not_printed.push((row, col, x, y, rotation, flip));
-                        continue;
+                match order {
+                    0.0 => {
+                        draw_asset( tw, th, zoom, texture, (row as f32, col as f32), (x, y), (flipx, flipy), rotation);
                     }
-                    draw_asset(tw, th, zoom, texture, (row as f32, col as f32), (x, y), flip, rotation);
+                    1.0 => {
+                        not_printed.push((row, col, x, y, rotation, (flipx, flipy)));
+                    }
+
+                    2.0 => {
+                        always_last.push((row, col, x, y, rotation, (flipx, flipy)));
+                    }
+                    _ => {}
                 }
             }
         }
     }
-    draw_asset(tw, th, zoom, joueur_asset, (py, px), (4.0, 0.0), player.get_flip(), 0.0);
-    for (row, col, x, y, rotation, flip) in not_printed.iter() {
-        draw_asset(tw, th, zoom, texture, (*row as f32, *col as f32), (*x, *y), *flip, *rotation);
+    for row in 0..layer.len() {
+        for (joueur, (asset, coord)) in entities.iter() {
+            let (px, py) = joueur.get_coord();
+            if py.round() as usize == row {
+                draw_asset(tw, th, zoom, asset, (py, px), *coord, (joueur.get_flip(), false), 0.0);
+            }
+        }
+        for (tile_row, col, x, y, rotation, flip) in not_printed.iter() {
+            if *tile_row == row {
+                draw_asset(tw, th, zoom, texture, (*tile_row as f32, *col as f32), (*x, *y), *flip, *rotation);
+            }
+        }
+    }
+    for (row, col, x, y, rotation, flip) in always_last.iter() {
+        draw_asset(tw, th, zoom, texture, (*row as f32, *col as f32), (*x, *y), *flip, *rotation,);
     }
 }
-
 
 fn fill_walls(map_objects: &mut Vec<Vec<Vec<Tile>>>, map_walls: &Vec<&str>) {
     let mut line = 0;
@@ -173,13 +179,15 @@ fn draw_inventory(player: &mut Entity, map_objects: &mut Vec<Vec<Vec<Tile>>>) {
     }
 }
 
-fn open_door(player: &mut Entity, map_objects: &mut Vec<Vec<Vec<Tile>>>) {
+fn activate_around(player: &mut Entity, map_objects: &mut Vec<Vec<Vec<Tile>>>) {
     let (px, py) = player.get_coord();
     let x = px.round() as isize;
     let y = py.round() as isize;
-    let mut destroy = vec![];
     for dy in -1..=1 {
         for dx in -1..=1 {
+            if dx == 0 && dy == 0{
+                continue
+            }
             let nx = x + dx;
             let ny = y + dy;
             if nx < 0 || ny < 0 {
@@ -191,26 +199,29 @@ fn open_door(player: &mut Entity, map_objects: &mut Vec<Vec<Vec<Tile>>>) {
                 continue;
             }
             for (index, tile) in map_objects[ny][nx].iter_mut().enumerate() {
-                match tile {
-                    Tile::Door => {
-                        *tile = Tile::DoorOpen1;
-                    }
-                    Tile::LatDoor1 => {
-                        *tile = Tile::DoorOpen2;
-                    }
-                    Tile::DoorOpen1 => {
-                        *tile = Tile::Door;
-                    }
-                    Tile::DoorOpen2 => {
-                        *tile = Tile::LatDoor1;
-                    }
-                    Tile::Pot => {
-                        player.add_inventory(10, "Potion".to_string());
-                        destroy.push((ny, nx, index));
-                    }
-                    _ => {}
+                let new_tile = Tile::activate_tile(*tile);
+                if new_tile != Tile::Void {
+                    *tile = new_tile
                 }
             }
+        }
+    }
+}
+
+fn grab_object(player: &mut Entity, map_objects: &mut Vec<Vec<Vec<Tile>>>) {
+    let (px, py) = player.get_coord();
+    let x = px.round() as usize;
+    let y = py.round() as usize;
+    let mut destroy = vec![];
+
+    for (index, tile) in map_objects[y][x].iter().enumerate() {
+        
+        match tile {
+            Tile::Pot => {
+                player.add_inventory(10, "Potion".to_string());
+                destroy.push((y, x, index));
+            }
+            _ => {}
         }
     }
     for (y, x, index) in destroy.into_iter().rev() {
@@ -218,8 +229,22 @@ fn open_door(player: &mut Entity, map_objects: &mut Vec<Vec<Vec<Tile>>>) {
     }
 }
 
+fn interact_with_others(player: &mut Entity, entities: &[(Entity, (Texture2D, (f32, f32)))]) {
+    let (x, y) = player.get_coord();
+    for (entity, _) in entities.iter() {
+        let (ex, ey) = entity.get_coord();
+        let dx = x - ex;
+        let dy = y - ey;
+        let dist = (dx * dx + dy * dy).sqrt();
+        if dist <= 1.0 {
+            let text = entity.talk();
+            let (x,y) = entity.get_coord();
+            draw_text(&text, x * 16.0 * 3.0, y * 16.0 * 3.0, 30.0, WHITE);
+        }
+    }
+}
 
-fn key_player(player: &mut Entity, map: &mut Vec<Vec<Vec<Tile>>>, print_inventory: &mut bool) {
+fn key_player(player: &mut Entity, map: &mut Vec<Vec<Vec<Tile>>>, entities: &[(Entity, (Texture2D, (f32, f32)))]) {
     if is_key_down(KeyCode::W) {
         if can_moove(player, map, "N"){
             player.moove("N")
@@ -241,11 +266,29 @@ fn key_player(player: &mut Entity, map: &mut Vec<Vec<Vec<Tile>>>, print_inventor
         }
     }
     if is_key_pressed(KeyCode::I) {
-        *print_inventory = !*print_inventory
+        player.rev_print_inventory()
     }
     if is_key_pressed(KeyCode::O) {
-        open_door(player, map);
+        activate_around(player, map);
+        interact_with_others(player, entities);
     }
+    if is_key_pressed(KeyCode::T) {
+        grab_object(player, map)
+    }
+    if player.can_print_inventory() {
+        draw_inventory(player, map);
+    }
+}
+
+async fn add_player(nom: String, coord: (f32, f32), asset_path: &str, asset_player: Characters, entities:&mut Vec<(Entity, (Texture2D, (f32, f32)))>, playable: bool) {
+    let asset_coord = asset_player.coord();
+    let mut joueur:Entity = Entity::nouvelle(nom, coord, playable);
+    let joueur_asset = load_texture(asset_path).await.unwrap();
+    joueur_asset.set_filter(FilterMode::Nearest);
+    if !playable {
+        joueur.add_dialogue("Bonjour !".to_string())
+    }
+    entities.push((joueur, (joueur_asset, asset_coord)))
 }
 
 #[macroquad::main(window_conf)]
@@ -257,6 +300,24 @@ async fn main() {
     let tile_height = texture.height() / 10.0;
     
     let mut map_objects:Vec<Vec<Vec<Tile>>> = vec![];
+    let mut entities: Vec<(Entity, (Texture2D, (f32, f32)))> = vec![];
+    add_player(
+        "Pascal".to_string(),
+        (1.0, 4.0),
+        "assets/player.png",
+        Characters::KnightKnife,
+        &mut entities,
+        true,
+    ).await;
+
+    add_player(
+        "Bob".to_string(),
+        (5.0, 6.0),
+        "assets/player.png",
+        Characters::PriestStick,
+        &mut entities,
+        false,
+    ).await;
 
     let map_walls = vec![
         "W     N1    N1,T       F1,D N1,T N2       N2   E        .    .    .    W    N1   N1   N1     N1      N1   E",  
@@ -264,9 +325,9 @@ async fn main() {
         "W     F3    F6         F6  F2   F6       F2   E        .    .    .    W    F4   F1   F3     F1      F2   E",  
         "W     F4    F6         F7  F6   F1       F1   N1,DL2   N1   N1   N1   N1   F3   F2   F1     F3      F2   E"  ,
         "W     F3    F2         F7  F4   F4       F6   F1,DL1   F2   F4   F2   F1   F3   F2   F1     F1      F5   E    .    .    .    .    .          .  N1 N1 N1",  
-        "W     F5    F7         F5  F3   F3       F5   S5       S    S    S    S4   F5   F7   F5     F3      F3   E    W    N1   N1   N1   N1         E  W  F1 F2",
+        "W     F5    N1         F5  F3   F3       F5   S5       S    S    S    S4   F5   F7   F5     F3      F3   E    W    N1   N1   N1   N1         E  W  F1 F2",
         "W     F3    F2         F1  F1   F5       F3   E        .    .    .    W    F3   F4   F2     F4,Sk   F1   E    W    F1   F1   F1   F1,Chest   F1 F1 F2 F5",
-        "W     F4    F2         F8  F5   F3       F8   E        .    .    .    W    F7   F4   F1     F2      F8   N1   F1,D   F1,D    S5   S    S          SE F1 F2 F5",
+        "W     F4    F2         F8  F5   F3       F8   E        .    .    .    W    F7   F4   F1     F2      F8   N1   F1,Dr   F1,D    S5   S    S          SE F1 F2 F5",
         "SW    S     S4         F1  S5   S        S    SE       .    .    .    W    F8   F3   F2     F6      F7   F3   F1   F4   E    .    .          .  S  S  S",
         "W     N1    N1         F6  N1   N2       N2   E        .    .    .    W    F2   F5   F3     F8      F1   F7   F4   F2   E",
         "W     F3    F1         F4  F7   F5       F2   E        .    .    .    W    F6   F2   F7     F4      F3   F8   F1   F5   E",
@@ -278,25 +339,18 @@ async fn main() {
         "W     F3    F8         F1  F5   F7       F4   E        .    .    .    W    F2   F6   F3     F1      F8   F4   F5   F7   E",
         "SW    S     S          S   S    S        S    SE       .    .    .    SW   S    S    S      S       S    S    S    S    SE",
     ];
-
-    let mut joueur:Entity = Entity::nouvelle("Pascal".to_string(), (1.0,4.0));
-    joueur.add_inventory(10, String::from("Epee"));
-    joueur.add_inventory(10, String::from("Epee"));
-    joueur.add_inventory(10, String::from("Epee"));
-    joueur.add_inventory(10, String::from("Potion"));
-    joueur.add_inventory(10, String::from("Truc"));
-    let joueur_asset = load_texture("assets/Dungeon_Character_2.png").await.unwrap();
-    joueur_asset.set_filter(FilterMode::Nearest); 
-    let mut print_inventory = false;
     fill_walls(&mut map_objects, &map_walls);
-    let zoom = 3.0;
+    let zoom = 3.0; 
     loop {
         clear_background(BLACK);
-        draw_layer(&map_objects, &texture, tile_width, tile_height, zoom, &joueur, &joueur_asset);
-        key_player(&mut joueur, &mut map_objects, &mut print_inventory);
-        if print_inventory{
-            draw_inventory(&mut joueur, &mut map_objects)
-        }
+        draw_layer(&map_objects, &texture, tile_width, tile_height, zoom, &mut entities);
+        let (player_slice, others) = entities.split_at_mut(1);
+        let player = &mut player_slice[0].0;
+        key_player(
+            player,
+            &mut map_objects,
+            others,
+        );
         next_frame().await;
     }
 }

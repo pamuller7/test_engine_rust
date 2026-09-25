@@ -61,18 +61,32 @@ pub struct Entity {
     location: String,
 	coord: (f32, f32),
 	flip: bool,
+	playable: bool,
+	print_inventory: bool,
+	dialogues: Vec<String>,
 }
 
 impl Entity {
-    pub fn nouvelle(nom: String, coord: (f32, f32)) -> Entity {
+    pub fn nouvelle(nom: String, coord: (f32, f32), playable: bool) -> Entity {
         Entity {
             nom,
             inventory: Inventory::new(10),
             location: String::from("Marché"),
 			coord,
 			flip: false,
+			playable,
+			print_inventory: false,
+			dialogues: vec![]
         }
     }
+
+	pub fn add_dialogue(&mut self, new_dialogue: String) {
+		self.dialogues.push(new_dialogue)
+	}
+
+	pub fn is_playable(&self) -> bool {
+		self.playable
+	}
 
 	pub fn get_coord(&self) -> (f32, f32){
         self.coord
@@ -90,12 +104,17 @@ impl Entity {
 		self.inventory.remove_item(name);
 	}
 
-    fn se_presenter(&self) {
-        println!(
-            "Je m'appelle {} et je suis au {}",
-            self.nom, self.location,
-        );
+    pub fn talk(&self) -> String {
+        self.dialogues[0].clone()
     }
+
+	pub fn rev_print_inventory(&mut self) {
+		self.print_inventory = !self.print_inventory
+	}
+
+	pub fn can_print_inventory(&self) -> bool {
+		self.print_inventory
+	}
 
 	pub fn get_inventory(&self) -> Vec<(String, u32, u32)> {
 		let mut output = vec![];
