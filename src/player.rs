@@ -56,32 +56,38 @@ impl Inventory {
 }
 
 pub struct Entity {
-    nom: String,
+    name: String,
     inventory: Inventory,
     location: String,
 	coord: (f32, f32),
 	flip: bool,
 	playable: bool,
 	print_inventory: bool,
-	dialogues: Vec<String>,
+	chatting: bool,
+	dialogues: (Vec<String>, usize),
 }
 
 impl Entity {
-    pub fn nouvelle(nom: String, coord: (f32, f32), playable: bool) -> Entity {
+    pub fn nouvelle(name: String, coord: (f32, f32), playable: bool) -> Entity {
         Entity {
-            nom,
+            name,
             inventory: Inventory::new(10),
             location: String::from("Marché"),
 			coord,
 			flip: false,
 			playable,
 			print_inventory: false,
-			dialogues: vec![]
+			chatting: false,
+			dialogues: (vec![], 0)
         }
     }
 
+	pub fn get_name(&self) -> String {
+		self.name.clone()
+	}
+
 	pub fn add_dialogue(&mut self, new_dialogue: String) {
-		self.dialogues.push(new_dialogue)
+		self.dialogues.0.push(new_dialogue)
 	}
 
 	pub fn is_playable(&self) -> bool {
@@ -100,16 +106,30 @@ impl Entity {
 		self.inventory.add_item(cost, name);
 	}
 
-	pub fn drop_inventory (&mut self, name: String) {
-		self.inventory.remove_item(name);
+	pub fn drop_inventory (&mut self, name: String) -> String {
+		self.inventory.remove_item(name.clone());
+		name.clone()
 	}
 
-    pub fn talk(&self) -> String {
-        self.dialogues[0].clone()
-    }
+	pub fn talk(&mut self) -> String {
+		let (text, index) = &mut self.dialogues;
+		if text.is_empty() {
+			return String::new();
+		}
+		*index = (*index % text.len()) + 1;
+		text[*index - 1].clone()
+	}
 
 	pub fn rev_print_inventory(&mut self) {
 		self.print_inventory = !self.print_inventory
+	}
+
+	pub fn rev_chatting(&mut self) {
+		self.chatting = !self.chatting
+	}
+
+	pub fn get_chatting(&mut self) -> bool {
+		self.chatting
 	}
 
 	pub fn can_print_inventory(&self) -> bool {
