@@ -35,7 +35,7 @@ pub enum Tile {
     WWall1, WWall2, NWall1, NWall2, SeAngle, SWall, SwAngle, EWall1, EWall2, S5, S4, Void,
     Floor1, Floor2, Floor3, Floor4, Floor5, Floor6, Floor7, Floor8,
     Spider1, Door, Spider2, LatDoor1, LatDoor2, DoorOpen1, DoorOpen2,Doorrev,DoorOpen3,DoorOpen0,
-    NTorch, Skeleton, Chest, Pot
+    NTorch, Skeleton, Chest, Pot, DoubleWall
 }
 
 // tile coord: (x, y, blocking or not, printed after or before the player
@@ -45,6 +45,7 @@ pub enum Tile {
 impl Tile {
     pub fn str_to_tile(index: &str) -> Tile {
         match index {
+            "DW"    => Tile::DoubleWall,
             "W"     => Tile::WWall1,
             "N1"    => Tile::NWall1,
             "N2"    => Tile::NWall2,
@@ -128,6 +129,7 @@ impl Tile {
             //walls
             Tile::WWall1  => (0.0, 0.0, 0.0, 2.0),
             Tile::WWall2  => (0.0, 1.0, 0.0, 2.0),
+            Tile::DoubleWall  => (3.5, 5.0, 0.0, 2.0),
             Tile::NWall1  => (1.0, 0.0, 0.0, 1.0),
             Tile::NWall2  => (3.0, 0.0, 0.0, 1.0),
             Tile::SwAngle => (0.0, 4.0, 0.0, 2.0),
@@ -155,9 +157,9 @@ impl Tile {
             Tile::Spider2 => (5.0, 6.0, 1.0, 0.0),
             Tile::Door      => (7.0, 3.0, 0.0, 1.0),
             Tile::Doorrev   => (7.0, 3.0, 0.0, 1.0),
-            Tile::DoorOpen0 => (7.0, 5.0, 1.0, 2.0),
-            Tile::DoorOpen1 => (7.0, 5.0, 1.0, 2.0),
-            Tile::DoorOpen2 => (7.0, 5.0, 1.0, 2.0),
+            Tile::DoorOpen0 => (7.0, 5.0, 1.0, 1.0),
+            Tile::DoorOpen1 => (7.0, 5.0, 1.0, 1.0),
+            Tile::DoorOpen2 => (7.0, 5.0, 1.0, 1.0),
             Tile::DoorOpen3 => (7.0, 3.0, 1.0, 1.0),
             Tile::LatDoor1 => (7.0, 5.0, 0.0, 2.0),
             Tile::LatDoor2 => (7.0, 4.0, 0.0, 2.0),
