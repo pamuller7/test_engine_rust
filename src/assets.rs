@@ -34,8 +34,8 @@ pub enum Tile {
     Empty,
     WWall1, WWall2, NWall1, NWall2, SeAngle, SWall, SwAngle, EWall1, EWall2, S5, S4, Void,
     Floor1, Floor2, Floor3, Floor4, Floor5, Floor6, Floor7, Floor8,
-    Spider1, Door, Spider2, LatDoor1, LatDoor2, DoorOpen1, DoorOpen2,Doorrev,DoorOpen3,DoorOpen0,
-    NTorch, Skeleton, Chest, Pot, DoubleWall
+    Spider1, Door, Spider2, LatDoor1, LatDoor2, DoorOpen1, DoorOpen2,Doorrev,DoorOpen3,DoorOpen0,DoubleWall,
+    NTorch, Skeleton, Chest, Pot, Key1, Key2,
 }
 
 // tile coord: (x, y, blocking or not, printed after or before the player
@@ -76,6 +76,8 @@ impl Tile {
             "Chest" => Tile::Chest,
             "Sp1"   => Tile::Spider1,
             "Pot"   => Tile::Pot,
+            "K1"    => Tile::Key1,
+            "K2"    => Tile::Key2,
             _       => Tile::Empty,
         }
     }
@@ -163,10 +165,33 @@ impl Tile {
             Tile::DoorOpen3 => (7.0, 3.0, 1.0, 1.0),
             Tile::LatDoor1 => (7.0, 5.0, 0.0, 2.0),
             Tile::LatDoor2 => (7.0, 4.0, 0.0, 2.0),
-            Tile::NTorch   => (0.0, 9.0, 1.0, 1.0),
             Tile::Skeleton => (7.0, 7.0, 1.0, 0.0),
             Tile::Chest    => (0.0, 8.0, 0.0, 0.0),
-            Tile::Pot      => (9.0, 8.0, 1.0, 0.0)
+            Tile::NTorch   => (0.0, 9.0, 1.0, 1.0),
+
+            //collectibles
+            Tile::Key1     => (8.0, 8.0, 1.0, 0.0),
+            Tile::Key2     => (9.0, 9.0, 1.0, 0.0),
+            Tile::Pot      => (9.0, 8.0, 1.0, 0.0),
+        }
+    }
+
+
+    pub fn get_object(self) -> String {
+        match self {
+            Tile::Pot     => "Potion".to_string(),
+            Tile::Key1    => "Silver key".to_string(),
+            Tile::Key2    => "Golden key".to_string(),
+            _         => "".to_string(),
+        }
+    }
+
+    pub fn get_tile_from_object(name: &str) -> Tile {
+        match name {
+            "Potion" => Tile::Pot,
+            "Silver key" => Tile::Key1,
+            "Golden key" => Tile::Key2,
+            _         => Tile::Void,
         }
     }
 }
