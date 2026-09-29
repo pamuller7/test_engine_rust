@@ -65,10 +65,12 @@ pub struct Entity {
 	print_inventory: bool,
 	chatting: bool,
 	dialogues: (Vec<String>, usize),
+	hp: i32,
+	hp_max: i32,
 }
 
 impl Entity {
-    pub fn nouvelle(name: String, coord: (f32, f32), playable: bool) -> Entity {
+    pub fn nouvelle(name: String, coord: (f32, f32), playable: bool, hp: i32) -> Entity {
         Entity {
             name,
             inventory: Inventory::new(10),
@@ -78,12 +80,26 @@ impl Entity {
 			playable,
 			print_inventory: false,
 			chatting: false,
-			dialogues: (vec![], 0)
+			dialogues: (vec![], 0),
+			hp,
+			hp_max: hp,
         }
     }
 
+	pub fn modif_hp(&mut self, amount: i32) -> bool {
+		if self.hp + amount <= self.hp_max {
+			self.hp += amount;
+			return self.hp <= 0
+		}
+		return false
+	}
+
 	pub fn get_name(&self) -> String {
 		self.name.clone()
+	}
+
+	pub fn get_location(&self) -> String {
+		self.location.clone()
 	}
 
 	pub fn add_dialogue(&mut self, new_dialogue: String) {
@@ -118,6 +134,14 @@ impl Entity {
 		}
 		*index = (*index % text.len()) + 1;
 		text[*index - 1].clone()
+	}
+
+	pub fn get_hp(&self) -> i32{
+		self.hp
+	}
+
+	pub fn get_hp_max(&self) -> i32 {
+		self.hp_max
 	}
 
 	pub fn rev_print_inventory(&mut self) {
@@ -160,5 +184,30 @@ impl Entity {
 		};
 		self.coord.0 += x2;
 		self.coord.1 += y2;
+	}
+
+	pub fn use_items(&mut self, name: &str) -> String {
+		let mut text = format!("{} can't use {}", self.name, name);
+		if self.items_behaviour(name) {
+			self.drop_inventory(name.to_string());
+			text = format!("{} used 1x{}", self.name, name);
+		}
+		text
+	}
+
+	fn items_behaviour(&mut self, name: &str) -> bool {
+		match name {
+			"Potion" => {
+				self.modif_hp(5);
+				true
+			}
+			"Poison" => {
+				self.modif_hp(-5);
+				true
+			}
+			_       => {
+				false
+			}
+		}
 	}
 }
