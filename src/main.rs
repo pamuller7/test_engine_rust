@@ -63,6 +63,7 @@ fn draw_layer(layer: &Vec<Vec<Vec<Tile>>>, texture: &Texture2D,
                 }
             }
         }
+
     }
     for row in 0..layer.len() {
         for (joueur, (asset, coord)) in entities.iter() {
@@ -89,9 +90,9 @@ fn draw_layer(layer: &Vec<Vec<Vec<Tile>>>, texture: &Texture2D,
 }
 
 fn fill_walls(map_objects: &mut Vec<Vec<Vec<Tile>>>, map_walls: &Vec<&str>) {
-    let mut line = 0;
-    let max_cols = (screen_width() / PIX_PER_CELL) as usize;
-    let max_rows = (screen_height() / PIX_PER_CELL) as usize;
+    let mut line: usize = 0;
+    let max_cols: usize = ((screen_width() + 1.0) / PIX_PER_CELL) as usize;
+    let max_rows: usize = (screen_height() / PIX_PER_CELL) as usize;
     for row_str in map_walls {
         let mut col = 0;
         let mut walls_row: Vec<Vec<Tile>> = vec![];
@@ -257,7 +258,7 @@ fn interact_with_others(player: &mut Entity,
         let dist = (dx * dx + dy * dy).sqrt();
         if dist <= 1.0 {
             let text: String = pnj_behaviour(entity, player);
-            chats.push((text, Instant::now()))
+            chats.push((text, Instant::now()));
         }
     }
     return chats
@@ -379,7 +380,7 @@ async fn add_player(nom: String, coord: (f32, f32),
     }
     if joueur.get_name() == "Vampire" {
         joueur.add_dialogue("BLBLBLBLBLBLBLBLBL".to_string());
-        joueur.add_dialogue("Je suis le danger".to_string());
+        joueur.add_dialogue("Je reve de gouter de l'ail".to_string());
         joueur.add_dialogue("KSSSSSSSS".to_string());
         joueur.add_dialogue("c'est la peau d'un tueur".to_string());
     }
@@ -423,10 +424,10 @@ async fn main() {
     let mut map_objects:Vec<Vec<Vec<Tile>>> = vec![];
     let mut entities: Vec<(Entity, (Texture2D, (f32, f32)))> = vec![];
 
-    add_player("GigaChad".to_string(), (1.0, 4.0), "assets/player.png", Characters::KnightKnife, &mut entities, true, 20).await;
     add_player("Bob".to_string(), (5.0, 6.0), "assets/player.png", Characters::PriestStick, &mut entities, false, 20,).await;
+    add_player("GigaChad".to_string(), (1.0, 4.0), "assets/player.png", Characters::KnightKnife, &mut entities, true, 20).await;
     add_player("Vampire".to_string(), (26.0, 9.0), "assets/player.png", Characters::VampireHair, &mut entities, false, 20,).await;
-
+    add_player("Death".to_string(), (1.0, 16.0), "assets/player.png", Characters::SquelettonSickle, &mut entities, false, 20,).await;
     let map_walls = vec![
         "W     N1     N1,T       F1,D N1,T N2       N2   E        .    .    .    W    N1   N1   N1     N1      N1   E",  
         "W     F7     F8         F7  F3   F6       F4   E        .    .    .    W    F1   F5   F4     F8      F6   E",  
