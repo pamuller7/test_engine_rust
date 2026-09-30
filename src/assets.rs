@@ -47,11 +47,13 @@ impl Tile {
         match index {
             "DW"    => Tile::DoubleWall,
             "W"     => Tile::WWall1,
+            "W2"    =>Tile::WWall2,
             "N1"    => Tile::NWall1,
             "N2"    => Tile::NWall2,
             "D"     => Tile::Door,
             "Dr"    => Tile::Doorrev,
             "E"     => Tile::EWall1,
+            "E2"    =>Tile::EWall2,
             "SW"    => Tile::SwAngle,
             "SE"    => Tile::SeAngle,
             "S"     => Tile::SWall,
