@@ -130,7 +130,7 @@ impl Entity {
 	pub fn talk(&mut self) -> String {
 		let (text, index) = &mut self.dialogues;
 		if text.is_empty() {
-			return String::new();
+			return "I have nothing to tell you".to_string();
 		}
 		*index = (*index % text.len()) + 1;
 		text[*index - 1].clone()
