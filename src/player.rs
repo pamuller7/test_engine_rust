@@ -1,13 +1,17 @@
+#[derive(Clone)]
 struct Item {
     cost: u32,
     name: String,
 }
 
+#[derive(Clone)]
 struct ItemStack {
     item: Item,
     quantity: u32,
 }
 
+
+#[derive(Clone)]
 struct Inventory {
     size: u32,
     items: Vec<ItemStack>,
@@ -55,6 +59,7 @@ impl Inventory {
 	}
 }
 
+#[derive(Clone)]
 pub struct Entity {
     name: String,
     inventory: Inventory,
@@ -108,6 +113,10 @@ impl Entity {
 
 	pub fn is_playable(&self) -> bool {
 		self.playable
+	}
+
+	pub fn set_coord(&mut self, coord:(f32, f32)) {
+		self.coord = coord;
 	}
 
 	pub fn get_coord(&self) -> (f32, f32){

@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 macroquad = "0.4.16"
+serde = { version = "1.0.229", features = ["derive"] }
+yaml_serde = "0.10.7"
 
 [[bin]]
 name = "the_answer_protocol"
