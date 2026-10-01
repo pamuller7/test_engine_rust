@@ -424,8 +424,8 @@ async fn main() {
     let mut map_objects:Vec<Vec<Vec<Tile>>> = vec![];
     let mut entities: Vec<(Entity, (Texture2D, (f32, f32)))> = vec![];
 
-    add_player("Bob".to_string(), (5.0, 6.0), "assets/player.png", Characters::PriestStick, &mut entities, false, 20,).await;
     add_player("GigaChad".to_string(), (1.0, 4.0), "assets/player.png", Characters::KnightKnife, &mut entities, true, 20).await;
+    add_player("Bob".to_string(), (5.0, 6.0), "assets/player.png", Characters::PriestStick, &mut entities, false, 20,).await;
     add_player("Vampire".to_string(), (26.0, 9.0), "assets/player.png", Characters::VampireHair, &mut entities, false, 20,).await;
     add_player("Death".to_string(), (1.0, 16.0), "assets/player.png", Characters::SquelettonSickle, &mut entities, false, 20,).await;
     let map_walls = vec![

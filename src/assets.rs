@@ -128,53 +128,53 @@ impl Tile {
 
     pub fn coord(self) -> (f32, f32, f32, f32) {
         match self {
-            Tile::Empty   => (0.0, 0.0, 1.0, 0.0),
+            Tile::Empty      => (0.0, 0.0, 1.0, 0.0),
 
             //walls
-            Tile::WWall1  => (0.0, 0.0, 0.0, 2.0),
-            Tile::WWall2  => (0.0, 1.0, 0.0, 2.0),
-            Tile::DoubleWall  => (3.5, 5.0, 0.0, 2.0),
-            Tile::NWall1  => (1.0, 0.0, 0.0, 1.0),
-            Tile::NWall2  => (3.0, 0.0, 0.0, 1.0),
-            Tile::SwAngle => (0.0, 4.0, 0.0, 2.0),
-            Tile::S5 =>(0.0, 5.0, 0.0, 2.0),
-            Tile::S4 =>(3.0, 5.0, 0.0, 2.0),
-            Tile::SWall   => (1.0, 4.0, 0.0, 1.0),
-            Tile::SeAngle => (5.0, 4.0, 0.0, 2.0),
-            Tile::EWall1  => (5.0, 0.0, 0.0, 2.0),
-            Tile::EWall2  => (5.0, 1.0, 0.0, 2.0),
+            Tile::WWall1     => (0.0, 0.0, 0.0, 2.0),
+            Tile::WWall2     => (0.0, 1.0, 0.0, 2.0),
+            Tile::DoubleWall => (3.5, 5.0, 0.0, 2.0),
+            Tile::NWall1     => (1.0, 0.0, 0.0, 1.0),
+            Tile::NWall2     => (3.0, 0.0, 0.0, 1.0),
+            Tile::SwAngle    => (0.0, 4.0, 0.0, 2.0),
+            Tile::S5         => (0.0, 5.0, 0.0, 2.0),
+            Tile::S4         => (3.0, 5.0, 0.0, 2.0),
+            Tile::SWall      => (1.0, 4.0, 0.0, 1.0),
+            Tile::SeAngle    => (5.0, 4.0, 0.0, 2.0),
+            Tile::EWall1     => (5.0, 0.0, 0.0, 2.0),
+            Tile::EWall2     => (5.0, 1.0, 0.0, 2.0),
 
-            //floors
-            Tile::Floor1  => (6.0, 0.0, 1.0, 0.0),
-            Tile::Floor2  => (7.0, 0.0, 1.0, 0.0),
-            Tile::Floor3  => (8.0, 0.0, 1.0, 0.0),
-            Tile::Floor4  => (9.0, 0.0, 1.0, 0.0),
-            Tile::Floor5  => (6.0, 1.0, 1.0, 0.0),
-            Tile::Floor6  => (7.0, 1.0, 1.0, 0.0),
-            Tile::Floor7  => (8.0, 1.0, 1.0, 0.0),
-            Tile::Floor8  => (9.0, 1.0, 1.0, 0.0),
-
-            Tile::Void     => (8.0, 7.0, 1.0, 0.0), // bg color
+            //floors 
+            Tile::Floor1     => (6.0, 0.0, 1.0, 0.0),
+            Tile::Floor2     => (7.0, 0.0, 1.0, 0.0),
+            Tile::Floor3     => (8.0, 0.0, 1.0, 0.0),
+            Tile::Floor4     => (9.0, 0.0, 1.0, 0.0),
+            Tile::Floor5     => (6.0, 1.0, 1.0, 0.0),
+            Tile::Floor6     => (7.0, 1.0, 1.0, 0.0),
+            Tile::Floor7     => (8.0, 1.0, 1.0, 0.0),
+            Tile::Floor8     => (9.0, 1.0, 1.0, 0.0),
+ 
+            Tile::Void       => (8.0, 7.0, 1.0, 0.0), // bg color
 
             //decorations
-            Tile::Spider1 => (4.0, 6.0, 1.0, 0.0),
-            Tile::Spider2 => (5.0, 6.0, 1.0, 0.0),
-            Tile::Door      => (7.0, 3.0, 0.0, 1.0),
-            Tile::Doorrev   => (7.0, 3.0, 0.0, 1.0),
-            Tile::DoorOpen0 => (7.0, 5.0, 1.0, 1.0),
-            Tile::DoorOpen1 => (7.0, 5.0, 1.0, 1.0),
-            Tile::DoorOpen2 => (7.0, 5.0, 1.0, 1.0),
-            Tile::DoorOpen3 => (7.0, 3.0, 1.0, 1.0),
-            Tile::LatDoor1 => (7.0, 5.0, 0.0, 2.0),
-            Tile::LatDoor2 => (7.0, 4.0, 0.0, 2.0),
-            Tile::Skeleton => (7.0, 7.0, 1.0, 0.0),
-            Tile::Chest    => (0.0, 8.0, 0.0, 0.0),
-            Tile::NTorch   => (0.0, 9.0, 1.0, 1.0),
+            Tile::Spider1    => (4.0, 6.0, 1.0, 0.0),
+            Tile::Spider2    => (5.0, 6.0, 1.0, 0.0),
+            Tile::Door       => (7.0, 3.0, 0.0, 1.0),
+            Tile::Doorrev    => (7.0, 3.0, 0.0, 1.0),
+            Tile::DoorOpen0  => (7.0, 5.0, 1.0, 1.0),
+            Tile::DoorOpen1  => (7.0, 5.0, 1.0, 1.0),
+            Tile::DoorOpen2  => (7.0, 5.0, 1.0, 1.0),
+            Tile::DoorOpen3  => (7.0, 3.0, 1.0, 1.0),
+            Tile::LatDoor1   => (7.0, 5.0, 0.0, 2.0),
+            Tile::LatDoor2   => (7.0, 4.0, 0.0, 2.0),
+            Tile::Skeleton   => (7.0, 7.0, 1.0, 0.0),
+            Tile::Chest      => (0.0, 8.0, 0.0, 0.0),
+            Tile::NTorch     => (0.0, 9.0, 1.0, 1.0),
 
-            //collectibles
-            Tile::Key1     => (8.0, 8.0, 1.0, 0.0),
-            Tile::Key2     => (9.0, 9.0, 1.0, 0.0),
-            Tile::Pot      => (9.0, 8.0, 1.0, 0.0),
+            //collectibles  
+            Tile::Key1       => (8.0, 8.0, 1.0, 0.0),
+            Tile::Key2       => (9.0, 9.0, 1.0, 0.0),
+            Tile::Pot        => (9.0, 8.0, 1.0, 0.0),
         }
     }
 
