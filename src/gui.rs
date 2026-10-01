@@ -96,19 +96,19 @@ fn draw_layer(layer: &Vec<Vec<Vec<Tile>>>, texture: &Texture2D,
 fn draw_button(x: f32, y: f32, width: f32, height: f32, text: &str) -> bool {
     let (mouse_x, mouse_y) = mouse_position();
 
-    let hovered =
+    let hovered: bool =
         mouse_x >= x &&
         mouse_x <= x + width &&
         mouse_y >= y &&
         mouse_y <= y + height;
-    let color = if hovered {
+    let color: Color = if hovered {
         DARKGRAY
     } else {
         GRAY
     };
 
     draw_rectangle(x, y, width, height, color);
-    let dimensions = measure_text(text, None, FONT_SIZE as u16, 1.0);
+    let dimensions: TextDimensions = measure_text(text, None, FONT_SIZE as u16, 1.0);
 
     draw_text(
         text,
@@ -130,8 +130,8 @@ fn can_moove(player: &mut Entity, map: &Vec<Vec<Vec<Tile>>>, movement: &str) -> 
     };
     let (x, y) = player.get_coord();
     let (x1, y1) = deplacement;
-    let new_col = ((x + x1).round()) as usize;
-    let new_line = ((y + y1).round()) as usize;
+    let new_col: usize = ((x + x1).round()) as usize;
+    let new_line: usize = ((y + y1).round()) as usize;
     for tile in map[new_line][new_col].iter(){
         let (_, _, info, _) = tile.coord();
         if info == 0.0{
@@ -144,17 +144,17 @@ fn can_moove(player: &mut Entity, map: &Vec<Vec<Vec<Tile>>>, movement: &str) -> 
 fn draw_inventory(player: &mut Entity,
                   map_objects: &mut Vec<Vec<Vec<Tile>>>) -> Vec<(String, Instant)> {
     let (x, y) = player.get_coord();
-    let mut chat = vec![];
-    let inventory_tab = player.get_inventory();
-    let text_x = (x + 1.0) * PIX_PER_CELL * ZOOM;
+    let mut chat: Vec<(String, Instant)> = vec![];
+    let inventory_tab: Vec<(String, u32, u32)> = player.get_inventory();
+    let text_x: f32 = (x + 1.0) * PIX_PER_CELL * ZOOM;
     for (index, (name, qtt, cost)) in inventory_tab.iter().enumerate() {
-        let text = format!("{} x{} - {}$", name, qtt, cost);
-        let item_y = index as f32 * FONT_SIZE + y * PIX_PER_CELL * ZOOM + 10.0;
+        let text: String = format!("{} x{} - {}$", name, qtt, cost);
+        let item_y: f32 = index as f32 * FONT_SIZE + y * PIX_PER_CELL * ZOOM + 10.0;
         draw_text(&text, text_x, item_y, FONT_SIZE, WHITE);
         let text_width = measure_text(&text, None, FONT_SIZE as u16, 1.0).width;
         if draw_button(text_x + text_width + 10.0, item_y - 50.0/3.0, 50.0, FONT_SIZE, "DROP") {
-            let dropped = player.drop_inventory(name.to_string());
-            let tile = Tile::get_tile_from_object(name);
+            let dropped: String = player.drop_inventory(name.to_string());
+            let tile: Tile = Tile::get_tile_from_object(name);
             map_objects[y.round() as usize][x.round() as usize].push(tile);
             let text: String = format!("{} dropped 1x{}", player.get_name(), dropped);
             chat.push((text, Instant::now()))
@@ -197,15 +197,15 @@ fn activate_around(player: &mut Entity, map_objects: &mut Vec<Vec<Vec<Tile>>>) {
 
 fn grab_object(player: &mut Entity, map_objects: &mut Vec<Vec<Vec<Tile>>>) -> Vec<(String, Instant)> {
     let (px, py) = player.get_coord();
-    let x = px.round() as usize;
-    let y = py.round() as usize;
-    let mut destroy = vec![];
+    let x: usize = px.round() as usize;
+    let y: usize = py.round() as usize;
+    let mut destroy: Vec<(usize, usize, usize)> = vec![];
     let mut chat: Vec<(String, Instant)> = vec![];
 
     for (index, tile) in map_objects[y][x].iter().enumerate() {
-        let item = tile.get_object();
+        let item: String = tile.get_object();
         if !item.is_empty() {
-            let text = format!("{} grabbed the item {}", player.get_name(), item);
+            let text: String = format!("{} grabbed the item {}", player.get_name(), item);
             chat.push((text, Instant::now()));
             player.add_inventory(10, item.to_string());
             destroy.push((y, x, index));
@@ -225,9 +225,9 @@ fn interact_with_others(player: &mut Entity,
     let mut chats: Vec<(String, Instant)> = vec![];
     for (entity, _) in entities.iter_mut() {
         let (ex, ey) = entity.get_coord();
-        let dx = x - ex;
-        let dy = y - ey;
-        let dist = (dx * dx + dy * dy).sqrt();
+        let dx: f32 = x - ex;
+        let dy: f32 = y - ey;
+        let dist: f32 = (dx * dx + dy * dy).sqrt();
         if dist <= 1.0 {
             let text: String = pnj_behaviour(entity, player);
             chats.push((text, Instant::now()));
@@ -237,7 +237,7 @@ fn interact_with_others(player: &mut Entity,
 }
 
 fn draw_chat(sentences: &mut Vec<(String, Instant)>, current_message: String) {
-    let max_height = screen_height();
+    let max_height: f32 = screen_height();
     if sentences.len() > 5 {
         sentences.remove(0);
     }
@@ -336,13 +336,13 @@ fn key_player(player: &mut Entity, map: &mut Vec<Vec<Vec<Tile>>>,
 
 
 fn draw_hud(player: &Entity) {
-    let name = player.get_name();
-    let hp = player.get_hp();
-    let hp_max = player.get_hp_max();
+    let name: String = player.get_name();
+    let hp: i32 = player.get_hp();
+    let hp_max: i32 = player.get_hp_max();
     let (x, y) = player.get_coord();
-    let max_height = screen_height();
-    let max_width = screen_width();
-    let mut text = format!("player: {}", name);
+    let max_height: f32 = screen_height();
+    let max_width: f32 = screen_width();
+    let mut text: String = format!("player: {}", name);
     draw_text(&text, max_width - 400.0 ,max_height - 90.0, 30.0, GRAY);
     text = format!("hp: {}/{}", hp, hp_max);
     draw_text(&text, max_width - 400.0 ,max_height - 60.0, 30.0, GRAY);
@@ -357,8 +357,8 @@ pub async fn run_gui(player_infos: (&mut Entity, (Texture2D, (f32, f32))),
     let texture: Texture2D = load_texture("assets/Dungeon_Tileset.png").await.unwrap();
     texture.set_filter(FilterMode::Nearest);
     let mut current_message: String = "".to_string();
-    let tile_width = texture.width() / NB_OF_CELL;
-    let tile_height = texture.height() / NB_OF_CELL;
+    let tile_width: f32 = texture.width() / NB_OF_CELL;
+    let tile_height: f32 = texture.height() / NB_OF_CELL;
     let (player, (player_asset, asset_coord)) = player_infos;
 
     loop {

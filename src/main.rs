@@ -48,14 +48,14 @@ struct Spawn {
 
 fn fill_walls(map_objects: &mut Vec<Vec<Vec<Tile>>>, map_walls: &Vec<String>) {
     let mut line: usize = 0;
-    let max_rows = map_walls.len();
-    let max_cols = map_walls
+    let max_rows: usize = map_walls.len();
+    let max_cols: usize = map_walls
         .iter()
         .map(|row| row.split_whitespace().count())
         .max()
         .unwrap_or(0);
     for row_str in map_walls {
-        let mut col = 0;
+        let mut col: usize = 0;
         let mut walls_row: Vec<Vec<Tile>> = vec![];
         for token in row_str.split_whitespace() {
             let mut cell_infos: Vec<Tile> = vec![];
@@ -86,9 +86,9 @@ async fn add_entity(nom: String, coord: (f32, f32),
                     asset_path: &str, asset_player: Characters,
                     entities:&mut Vec<(Entity, (Texture2D, (f32, f32)))>,
                     playable: bool, hp: i32) {
-    let asset_coord = asset_player.coord();
+    let asset_coord: (f32, f32) = asset_player.coord();
     let joueur: Entity = Entity::nouvelle(nom, coord, playable, hp);
-    let joueur_asset = load_texture(asset_path).await.unwrap();
+    let joueur_asset: Texture2D = load_texture(asset_path).await.unwrap();
     joueur_asset.set_filter(FilterMode::Nearest);
     entities.push((joueur, (joueur_asset, asset_coord)))
 }
@@ -108,14 +108,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
  
     let config: Game = yaml_serde::from_str(&x)?;
-    let mut coord = (1.0, 4.0);
+    let mut coord: (f32, f32) = (1.0, 4.0);
 	let mut player: Entity = Entity::nouvelle("GigaChad".to_string(), coord, true, 20);
-	let asset_coord = Characters::KnightKnife.coord();
+	let asset_coord: (f32, f32) = Characters::KnightKnife.coord();
 	let player_asset: Texture2D = load_texture("assets/player.png").await.unwrap();
     player_asset.set_filter(FilterMode::Nearest);
 
 
-    let mut current_location_name = "start".to_string();
+    let mut current_location_name: String = "start".to_string();
     let mut ran: u8 = 8;
 
     loop {
