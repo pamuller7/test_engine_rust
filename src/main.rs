@@ -87,7 +87,7 @@ async fn add_entity(nom: String, coord: (f32, f32),
                     entities:&mut Vec<(Entity, (Texture2D, (f32, f32)))>,
                     playable: bool, hp: i32) {
     let asset_coord = asset_player.coord();
-    let joueur:Entity = Entity::nouvelle(nom, coord, playable, hp);
+    let joueur: Entity = Entity::nouvelle(nom, coord, playable, hp);
     let joueur_asset = load_texture(asset_path).await.unwrap();
     joueur_asset.set_filter(FilterMode::Nearest);
     entities.push((joueur, (joueur_asset, asset_coord)))
@@ -148,7 +148,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 player.set_coord((3.0, 4.0));
             }
         }
-		let mut entities: Vec<(Entity, (Texture2D, (f32, f32)))> = vec![(player.clone(), (player_asset.clone(), asset_coord))];
+		let mut entities: Vec<(Entity, (Texture2D, (f32, f32)))> = vec![];
 		add_entity("Bob".to_string(), (5.0, 6.0), "assets/player.png", Characters::PriestStick, &mut entities, false, 20).await;
 		add_entity("Vampire".to_string(), (26.0, 9.0), "assets/player.png", Characters::VampireHair, &mut entities, false, 20).await;
 		add_entity("Death".to_string(), (1.0, 16.0), "assets/player.png", Characters::SquelettonSickle, &mut entities, false, 20).await;
@@ -156,7 +156,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         
         println!("row {}    col {}", map_objects.len(), map_objects[0].len());
 
-		(ran, coord) = run_gui(&mut chats, entities, map_objects).await;
+		(ran, coord) = run_gui((&mut player, (player_asset.clone(), asset_coord)),
+                               &mut chats, &mut entities, map_objects).await;
         println!("{}", ran);
 		match ran {
             NORTH => {

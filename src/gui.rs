@@ -30,9 +30,18 @@ fn draw_asset(tw: f32, th: f32, asset: &Texture2D,
 }
 
 fn draw_layer(layer: &Vec<Vec<Vec<Tile>>>, texture: &Texture2D,
-              tw: f32, th: f32, entities:&mut Vec<(Entity, (Texture2D, (f32, f32)))>) {
-    let mut not_printed = vec![];
-    let mut always_last = vec![];
+              tw: f32, th: f32, entities:&mut Vec<(Entity, (Texture2D, (f32, f32)))>,
+              player: &mut Entity, player_asset: Texture2D, asset_coord: (f32, f32)) {
+
+    let mut not_printed: Vec<(usize, usize, f32, f32, f32, (bool, bool))> = vec![];
+    let mut always_last: Vec<(usize, usize, f32, f32, f32, (bool, bool))> = vec![];
+    let mut all_entities: Vec<(&Entity, (Texture2D, (f32, f32)))> = Vec::new();
+
+    all_entities.push((player, (player_asset.clone(), asset_coord)));
+
+    for (entity, asset) in entities.iter() {
+        all_entities.push((entity, asset.clone()));
+    }
     for (row, line) in layer.iter().enumerate() {
         for (col, cell) in line.iter().enumerate() {
             for tile in cell {
@@ -61,7 +70,7 @@ fn draw_layer(layer: &Vec<Vec<Vec<Tile>>>, texture: &Texture2D,
 
     }
     for row in 0..layer.len() {
-        for (joueur, (asset, coord)) in entities.iter() {
+        for (joueur, (asset, coord)) in all_entities.iter() {
             let (px, py) = joueur.get_coord();
             if py.round() as usize == row {
                 let text = joueur.get_name();
@@ -341,23 +350,23 @@ fn draw_hud(player: &Entity) {
     draw_text(&text, max_width - 400.0 ,max_height - 30.0, 30.0, GRAY);
 }
 
-//chats, entities et map_objects a share aux non hosts ?
-pub async fn run_gui(chats: &mut Vec<(String, Instant)>,
-                 mut entities: Vec<(Entity, (Texture2D, (f32, f32)))>,
-                 mut map_objects: Vec<Vec<Vec<Tile>>>) -> (u8, (f32, f32)){
-    let texture = load_texture("assets/Dungeon_Tileset.png").await.unwrap();
+pub async fn run_gui(player_infos: (&mut Entity, (Texture2D, (f32, f32))),
+                 chats: &mut Vec<(String, Instant)>,
+                 entities: &mut Vec<(Entity, (Texture2D, (f32, f32)))>,
+                 mut map_objects: Vec<Vec<Vec<Tile>>>) -> (u8, (f32, f32)) {
+    let texture: Texture2D = load_texture("assets/Dungeon_Tileset.png").await.unwrap();
     texture.set_filter(FilterMode::Nearest);
     let mut current_message: String = "".to_string();
     let tile_width = texture.width() / NB_OF_CELL;
     let tile_height = texture.height() / NB_OF_CELL;
+    let (player, (player_asset, asset_coord)) = player_infos;
 
     loop {
         clear_background(BLACK);
-        draw_layer(&map_objects, &texture, tile_width, tile_height, &mut entities);
+        draw_layer(&map_objects, &texture, tile_width, tile_height,
+                   entities, player, player_asset.clone(), asset_coord);
         
-        let (player_slice, others) = entities.split_at_mut(1);
-        let player = &mut player_slice[0].0;
-        chats.extend(key_player(player, &mut map_objects, others, &mut current_message));
+        chats.extend(key_player(player, &mut map_objects, entities, &mut current_message));
         draw_chat(chats, current_message.clone());
         draw_hud(player);
         if is_key_pressed(KeyCode::Escape) {
